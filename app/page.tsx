@@ -1,65 +1,141 @@
-import Image from "next/image";
+"use client";
+
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
+import { useState } from "react";
 
 export default function Home() {
+  const transactions = useQuery(api.manageTransactions.getAllTransactions);
+  const addTransaction = useMutation(api.manageTransactions.addTransaction);
+  const removeTransaction = useMutation(
+    api.manageTransactions.removeTransaction,
+  );
+  const categories = useQuery(api.manageCategories.getAllCategories);
+  const [newDate, setNewDate] = useState("");
+  const [newCategory, setNewCategory] = useState<Id<"categories">>(
+    categories && categories.length > 0 ? categories[0]._id : "",
+  );
+  const [newValue, setNewValue] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [editable, setEditable] = useState(false);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="flex min-h-screen flex-col items-center justify-start p-24">
+      <h1 className="text-2xl mb-6">Transactions</h1>
+      <div className="w-full max-w-4xl">
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="text-left border-b">
+              <th className="px-4 py-2">Date</th>
+              <th className="px-4 py-2">Category</th>
+              <th className="px-4 py-2">Value</th>
+              <th className="px-4 py-2">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions?.length ? (
+              transactions
+                .sort((a, b) => b.date - a.date)
+                .map(({ _id, date, category, value, description }) => (
+                  <tr key={_id} className="border-b">
+                    <td className="px-4 py-2">
+                      {new Date(date).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-2">
+                      {categories
+                        ? categories.find((cat) => cat._id === category)
+                            ?.name || "Unknown Category"
+                        : "Unknown Category"}
+                    </td>
+                    <td className="px-4 py-2">{value}€</td>
+                    <td className="px-4 py-2">{description}</td>
+                    <td className="px-4 py-2">
+                      {editable && (
+                        <button
+                          className="px-4 py-2 bg-third-color text-primary-color rounded"
+                          onClick={() => removeTransaction({ id: _id })}
+                        >
+                          -
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+            ) : (
+              <tr>
+                <td className="px-4 py-2" colSpan={3}>
+                  No transactions found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        {editable && (
+          <div className="mt-2 flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="px-2 py-1 border rounded"
+              />
+              <select
+                value={newCategory || ""}
+                onChange={(e) =>
+                  setNewCategory(e.target.value as Id<"categories">)
+                }
+                className="px-2 py-1 border rounded"
+              >
+                {categories?.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                placeholder="Value"
+                value={newValue}
+                onChange={(e) => setNewValue(e.target.value)}
+                className="px-2 py-1 border rounded w-24"
+              />
+              <input
+                type="text"
+                placeholder="(Description)"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                className="px-2 py-1 border rounded w-32"
+              />
+              <button
+                onClick={() => {
+                  const newTransaction = {
+                    date: new Date(newDate).getTime(),
+                    category: newCategory,
+                    value: Number(newValue),
+                    ...(newDescription && { description: newDescription }),
+                  };
+                  addTransaction(newTransaction);
+                  setNewDate("");
+                  setNewValue("");
+                  setNewDescription("");
+                }}
+                className="px-4 py-2 bg-third-color text-primary-color rounded"
+                disabled={!newValue || !newCategory}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="mt-2">
+          <button
+            onClick={() => setEditable(!editable)}
+            className="px-4 py-2 bg-third-color text-primary-color rounded"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Toggle Editing
+          </button>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

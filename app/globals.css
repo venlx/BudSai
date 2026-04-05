@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--color-primary-color);
+  --foreground: var(--color-forth-color);
 }
 
 @theme inline {
@@ -10,12 +10,18 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Add your custom colors here */
+  --color-primary-color: #f6f0e7;
+  --color-secondary-color: #c5d89d;
+  --color-third-color: #9cab84;
+  --color-forth-color: #4a5a2a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: var(--color-primary-color);
+    --foreground: var(--color-forth-color);
   }
 }
 
