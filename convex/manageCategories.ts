@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { CategoryType } from "./constants";
 
 export const getAllCategories = query({
   args: {},
@@ -10,14 +11,19 @@ export const getAllCategories = query({
 
 export const addCategory = mutation({
   args: {
-    expense: v.boolean(),
+    type: v.union(
+      v.literal(CategoryType.Expense),
+      v.literal(CategoryType.Income),
+      v.literal(CategoryType.Bill),
+      v.literal(CategoryType.Savings),
+    ),
     name: v.string(),
     parent: v.optional(v.id("categories")),
     monthlyBudget: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const insertedId = await ctx.db.insert("categories", {
-      expense: args.expense,
+      type: args.type,
       name: args.name,
       ...(args.parent && { parent: args.parent }),
       ...(args.monthlyBudget && { monthlyBudget: args.monthlyBudget }),
@@ -48,25 +54,25 @@ export const removeCategory = mutation({
 export const updateCategory = mutation({
   args: {
     id: v.id("categories"),
-    expense: v.optional(v.boolean()),
+    type: v.optional(
+      v.union(
+        v.literal(CategoryType.Expense),
+        v.literal(CategoryType.Income),
+        v.literal(CategoryType.Bill),
+        v.literal(CategoryType.Savings),
+      ),
+    ),
     name: v.optional(v.string()),
     parent: v.optional(v.id("categories")),
     monthlyBudget: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    if (args.expense) {
-      await ctx.db.patch(args.id, { set: { expense: args.expense } });
-    }
-    if (args.name) {
-      await ctx.db.patch(args.id, { set: { name: args.name } });
-    }
-    if (args.parent) {
-      await ctx.db.patch(args.id, { set: { parent: args.parent } });
-    }
-    if (args.monthlyBudget) {
-      await ctx.db.patch(args.id, {
-        set: { monthlyBudget: args.monthlyBudget },
-      });
-    }
+    const patch: Record<string, unknown> = {};
+    if (args.type !== undefined) patch.type = args.type;
+    if (args.name !== undefined) patch.name = args.name;
+    if (args.parent !== undefined) patch.parent = args.parent;
+    if (args.monthlyBudget !== undefined)
+      patch.monthlyBudget = args.monthlyBudget;
+    await ctx.db.patch(args.id, patch);
   },
 });

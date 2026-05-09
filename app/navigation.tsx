@@ -7,7 +7,7 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="bg-secondary-color text-forth-color p-4">
+    <nav className="sticky top-0 z-50 bg-secondary-color text-forth-color p-4">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">🌱 BudSai</h1>
 

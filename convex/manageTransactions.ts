@@ -26,6 +26,24 @@ export const addTransaction = mutation({
   },
 });
 
+export const updateTransaction = mutation({
+  args: {
+    id: v.id("transactions"),
+    date: v.optional(v.number()),
+    category: v.optional(v.id("categories")),
+    value: v.optional(v.number()),
+    description: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const patch: Record<string, unknown> = {};
+    if (args.date !== undefined) patch.date = args.date;
+    if (args.category !== undefined) patch.category = args.category;
+    if (args.value !== undefined) patch.value = args.value;
+    if (args.description !== undefined) patch.description = args.description;
+    await ctx.db.patch(args.id, patch);
+  },
+});
+
 export const removeTransaction = mutation({
   args: {
     id: v.id("transactions"),
