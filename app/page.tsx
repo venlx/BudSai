@@ -23,8 +23,8 @@ export default function Home() {
   } | null>(null);
   const [editValue, setEditValue] = useState("");
   const [newDate, setNewDate] = useState("");
-  const [newCategory, setNewCategory] = useState<Id<"categories">>(
-    categories && categories.length > 0 ? categories[0]._id : "",
+  const [newCategory, setNewCategory] = useState<Id<"categories"> | null>(
+    categories && categories.length > 0 ? categories[0]._id : null,
   );
   const [newValue, setNewValue] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -302,6 +302,7 @@ export default function Home() {
               />
               <button
                 onClick={() => {
+                  if (!newCategory) return;
                   const newTransaction = {
                     date: new Date(newDate).getTime(),
                     category: newCategory,

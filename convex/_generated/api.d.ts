@@ -8,8 +8,10 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as categories from "../categories.js";
 import type * as constants from "../constants.js";
+import type * as http from "../http.js";
 import type * as manageCategories from "../manageCategories.js";
 import type * as manageTransactions from "../manageTransactions.js";
 import type * as transactions from "../transactions.js";
@@ -21,8 +23,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   categories: typeof categories;
   constants: typeof constants;
+  http: typeof http;
   manageCategories: typeof manageCategories;
   manageTransactions: typeof manageTransactions;
   transactions: typeof transactions;

@@ -31,6 +31,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "convex/**/*.ts",
+    "app/settings",
   ],
   "exclude": ["node_modules"],
 }

@@ -1,10 +1,21 @@
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { query, mutation, type MutationCtx } from "./_generated/server";
+import { v, ConvexError } from "convex/values";
+
+async function requireUser(ctx: MutationCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) throw new ConvexError("Unauthenticated");
+  return identity.subject;
+}
 
 export const getAllTransactions = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("transactions").collect();
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    return await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .collect();
   },
 });
 
@@ -16,13 +27,14 @@ export const addTransaction = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const insertedId = await ctx.db.insert("transactions", {
+    const userId = await requireUser(ctx);
+    return await ctx.db.insert("transactions", {
+      userId,
       date: args.date,
       category: args.category,
       value: args.value,
       description: args.description,
     });
-    return insertedId;
   },
 });
 
@@ -35,6 +47,9 @@ export const updateTransaction = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const userId = await requireUser(ctx);
+    const tx = await ctx.db.get(args.id);
+    if (!tx || tx.userId !== userId) throw new ConvexError("Not found");
     const patch: Record<string, unknown> = {};
     if (args.date !== undefined) patch.date = args.date;
     if (args.category !== undefined) patch.category = args.category;
@@ -45,10 +60,11 @@ export const updateTransaction = mutation({
 });
 
 export const removeTransaction = mutation({
-  args: {
-    id: v.id("transactions"),
-  },
+  args: { id: v.id("transactions") },
   handler: async (ctx, args) => {
+    const userId = await requireUser(ctx);
+    const tx = await ctx.db.get(args.id);
+    if (!tx || tx.userId !== userId) throw new ConvexError("Not found");
     await ctx.db.delete(args.id);
   },
 });
